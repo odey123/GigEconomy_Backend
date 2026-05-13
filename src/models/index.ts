@@ -8,3 +8,5 @@ export { Booking, type IBookingDocument } from './Booking';
 export { Payment, type IPaymentDocument } from './Payment';
 export { Review, type IReviewDocument } from './Review';
 export { Notification, type INotificationDocument } from './Notification';
+export { Wallet, type IWallet } from './Wallet';
+export { Transaction, type ITransaction } from './Transaction';

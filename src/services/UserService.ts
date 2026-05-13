@@ -150,7 +150,7 @@ export class UserService {
   /**
    * Generate JWT token
    */
-  private generateToken(userId: string, expiresIn: string): string {
+  public generateToken(userId: string, expiresIn: string): string {
     return jwt.sign({ userId }, config.jwtSecret, { expiresIn });
   }
 

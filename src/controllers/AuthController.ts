@@ -33,14 +33,19 @@ export class AuthController {
         role: value.role,
       };
 
-      const result = await this.userService.createUser(createUserDTO);
+      const user = await this.userService.createUser(createUserDTO);
+
+      // Auto-login after signup by generating tokens
+      const token = this.userService.generateToken(user._id, '24h');
+      const refreshToken = this.userService.generateToken(user._id, '7d');
 
       res.status(201).json({
         status: 'success',
         message: 'User created successfully',
         data: {
-          user: result,
-          token: result.token,
+          user,
+          token,
+          refreshToken,
         },
       });
     } catch (error) {
