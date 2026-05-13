@@ -1,25 +1,22 @@
-import { Schema, model, Document, Types } from 'mongoose';
-import { IPayment, PaymentStatus } from '@types/index';
+import { Schema, model, Document } from 'mongoose';
+import { IPayment, PaymentStatus } from '../types/index';
 
 export interface IPaymentDocument extends IPayment, Document {}
 
 const paymentSchema = new Schema<IPaymentDocument>(
   {
     bookingId: {
-      type: Types.ObjectId,
-      ref: 'Booking',
+      type: String,
       required: [true, 'Booking ID is required'],
       index: true,
     },
     workerId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Worker ID is required'],
       index: true,
     },
     clientId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Client ID is required'],
       index: true,
     },

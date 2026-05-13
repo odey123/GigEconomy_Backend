@@ -1,24 +1,21 @@
-import { Schema, model, Document, Types } from 'mongoose';
-import { IReview } from '@types/index';
+import { Schema, model, Document } from 'mongoose';
+import { IReview } from '../types/index';
 
 export interface IReviewDocument extends IReview, Document {}
 
 const reviewSchema = new Schema<IReviewDocument>(
   {
     bookingId: {
-      type: Types.ObjectId,
-      ref: 'Booking',
+      type: String,
       required: [true, 'Booking ID is required'],
       index: true,
     },
     reviewerId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Reviewer ID is required'],
     },
     revieweeId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Reviewee ID is required'],
       index: true,
     },

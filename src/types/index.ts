@@ -53,7 +53,6 @@ export enum JobCategory {
 }
 
 export interface IUser {
-  _id?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -83,7 +82,6 @@ export interface IUser {
 }
 
 export interface IJob {
-  _id?: string;
   title: string;
   description: string;
   category: JobCategory;
@@ -106,7 +104,6 @@ export interface IJob {
 }
 
 export interface IBooking {
-  _id?: string;
   jobId: string;
   workerId: string;
   clientId: string;
@@ -122,7 +119,6 @@ export interface IBooking {
 }
 
 export interface IPayment {
-  _id?: string;
   bookingId: string;
   workerId: string;
   clientId: string;
@@ -137,7 +133,6 @@ export interface IPayment {
 }
 
 export interface IReview {
-  _id?: string;
   bookingId: string;
   reviewerId: string;
   revieweeId: string;
@@ -154,7 +149,6 @@ export interface IReview {
 }
 
 export interface INotification {
-  _id?: string;
   userId: string;
   type: string;
   title: string;

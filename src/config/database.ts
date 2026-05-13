@@ -17,7 +17,6 @@ export const connectDB = async (): Promise<Connection> => {
       minPoolSize: 2,
       socketTimeoutMS: 45000,
       serverSelectionTimeoutMS: 5000,
-      socketKeepAliveMS: 45000,
       family: 4, // Use IPv4
     });
 

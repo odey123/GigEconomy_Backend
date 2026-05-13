@@ -1,5 +1,5 @@
-import { Schema, model, Document, Types } from 'mongoose';
-import { IJob, JobStatus, JobCategory } from '@types/index';
+import { Schema, model, Document } from 'mongoose';
+import { IJob, JobStatus, JobCategory } from '../types/index';
 
 export interface IJobDocument extends IJob, Document {}
 
@@ -42,8 +42,7 @@ const jobSchema = new Schema<IJobDocument>(
       min: [0, 'Budget cannot be negative'],
     },
     clientId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Client ID is required'],
       index: true,
     },
@@ -74,8 +73,7 @@ const jobSchema = new Schema<IJobDocument>(
     estimatedDuration: String,
     skills: [String],
     acceptedWorkerId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       default: null,
     },
     attachments: [String],

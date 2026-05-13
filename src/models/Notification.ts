@@ -1,13 +1,12 @@
-import { Schema, model, Document, Types } from 'mongoose';
-import { INotification } from '@types/index';
+import { Schema, model, Document } from 'mongoose';
+import { INotification } from '../types/index';
 
 export interface INotificationDocument extends INotification, Document {}
 
 const notificationSchema = new Schema<INotificationDocument>(
   {
     userId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'User ID is required'],
       index: true,
     },

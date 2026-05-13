@@ -1,25 +1,22 @@
-import { Schema, model, Document, Types } from 'mongoose';
-import { IBooking, BookingStatus } from '@types/index';
+import { Schema, model, Document } from 'mongoose';
+import { IBooking, BookingStatus } from '../types/index';
 
 export interface IBookingDocument extends IBooking, Document {}
 
 const bookingSchema = new Schema<IBookingDocument>(
   {
     jobId: {
-      type: Types.ObjectId,
-      ref: 'Job',
+      type: String,
       required: [true, 'Job ID is required'],
       index: true,
     },
     workerId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Worker ID is required'],
       index: true,
     },
     clientId: {
-      type: Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: [true, 'Client ID is required'],
       index: true,
     },

@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { IUser, UserRole, UserStatus } from '@types/index';
+import { IUser, UserRole, UserStatus } from '../types/index';
 
 export interface IUserDocument extends IUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -125,10 +125,6 @@ userSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Exclude password from default queries
-userSchema.query.withoutPassword = function () {
-  return this.select('-password');
-};
 
 // Create and export User model
 export const User = model<IUserDocument>('User', userSchema);
