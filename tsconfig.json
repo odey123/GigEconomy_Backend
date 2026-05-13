@@ -39,6 +39,13 @@
       "@types/*": ["src/types/*"]
     }
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }
