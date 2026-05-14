@@ -12,6 +12,9 @@ import { AppError } from './utils/errors';
 import authRoutes from './routes/auth';
 import usersRoutes from './routes/users';
 import gigsRoutes from './routes/gigs';
+import bookingsRoutes from './routes/bookings';
+import paymentsRoutes from './routes/payments';
+import reviewsRoutes from './routes/reviews';
 // import applicationsRoutes from './routes/applications';
 // import contractsRoutes from './routes/contracts';
 
@@ -66,6 +69,9 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/gigs', gigsRoutes);
+app.use('/api/bookings', bookingsRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/reviews', reviewsRoutes);
 // app.use('/api/applications', applicationsRoutes);
 // app.use('/api/contracts', contractsRoutes);
 

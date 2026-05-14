@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/UserService';
-import { ValidationError, UnauthorizedError } from '../utils/errors';
+import { ValidationError } from '../utils/errors';
 import { userValidationSchemas } from '../utils/validators';
 import type { CreateUserDTO, LoginDTO } from '../utils/dtos';
 
@@ -118,7 +118,7 @@ export class AuthController {
    * Logout user (client-side, mainly for cleanup)
    * POST /api/auth/logout
    */
-  public logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public logout = async (res: Response, next: NextFunction): Promise<void> => {
     try {
       res.status(200).json({
         status: 'success',
