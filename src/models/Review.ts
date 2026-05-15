@@ -31,6 +31,11 @@ const reviewSchema = new Schema<IReviewDocument>(
       minlength: [10, 'Comment must be at least 10 characters'],
       maxlength: [1000, 'Comment cannot exceed 1000 characters'],
     },
+    tags: {
+      type: [String],
+      default: [],
+      enum: ['punctual', 'honest', 'skilled', 'professional', 'responsive', 'careless', 'unreliable', 'unfriendly'],
+    },
     categories: {
       communication: {
         type: Number,

@@ -15,8 +15,13 @@ import gigsRoutes from './routes/gigs';
 import bookingsRoutes from './routes/bookings';
 import paymentsRoutes from './routes/payments';
 import reviewsRoutes from './routes/reviews';
+import walletRoutes from './routes/wallet';
+import contractRoutes from './routes/contracts';
+import webhookRoutes from './routes/webhooks';
+import aiRoutes from './routes/ai';
+import evidenceRoutes from './routes/evidence';
+import reputationRoutes from './routes/reputation';
 // import applicationsRoutes from './routes/applications';
-// import contractsRoutes from './routes/contracts';
 
 const app: Express = express();
 
@@ -72,8 +77,13 @@ app.use('/api/gigs', gigsRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/evidence', evidenceRoutes);
+app.use('/api/reputation', reputationRoutes);
+app.use('/webhooks', webhookRoutes);
 // app.use('/api/applications', applicationsRoutes);
-// app.use('/api/contracts', contractsRoutes);
 
 /**
  * 404 Handler

@@ -2,15 +2,17 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IWallet extends Document {
   userId: string;
-  walletId: string;
+  squadVirtualAccountId: string;
   accountNumber: string;
-  bank: string;
+  accountName: string;
   bankCode: string;
+  bankName: string;
   balance: number;
   currency: string;
   verified: boolean;
   bvn: string;
   fullName: string;
+  dateOfBirth: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,24 +25,28 @@ const walletSchema = new Schema<IWallet>(
       unique: true,
       index: true,
     },
-    walletId: {
+    squadVirtualAccountId: {
       type: String,
-      required: true,
+      required: [true, 'Squad Virtual Account ID is required'],
       unique: true,
       index: true,
     },
     accountNumber: {
       type: String,
-      required: true,
+      required: [true, 'Account number is required'],
       unique: true,
     },
-    bank: {
+    accountName: {
       type: String,
-      required: true,
+      required: [true, 'Account name is required'],
     },
     bankCode: {
       type: String,
-      required: true,
+      required: [true, 'Bank code is required'],
+    },
+    bankName: {
+      type: String,
+      required: [true, 'Bank name is required'],
     },
     balance: {
       type: Number,
@@ -54,14 +60,20 @@ const walletSchema = new Schema<IWallet>(
     verified: {
       type: Boolean,
       default: false,
+      index: true,
     },
     bvn: {
       type: String,
-      required: true,
+      required: [true, 'BVN is required'],
+      unique: true,
     },
     fullName: {
       type: String,
-      required: true,
+      required: [true, 'Full name is required'],
+    },
+    dateOfBirth: {
+      type: Date,
+      required: [true, 'Date of birth is required'],
     },
   },
   {

@@ -1,0 +1,497 @@
+{
+  "info": {
+    "_postman_id": "gig-economy-complete-api",
+    "name": "Gig Economy API - Complete (Layers 1-6)",
+    "description": "Complete API collection for all 6 layers: Auth, Gigs, Contracts, Squad Wallet, AI Service, Evidence & Reputation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Layer 1: Auth + Wallet",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "1. Signup (Owner)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('token', jsonData.data.token);", "    pm.environment.set('userId', jsonData.data.user._id);", "    pm.environment.set('userRole', jsonData.data.user.role);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"firstName\": \"Rock\", \"lastName\": \"Healthy\", \"email\": \"rockhealthy@example.com\", \"phone\": \"+2348012345678\", \"password\": \"SecurePass123!\", \"role\": \"client\"}"},
+                "url": {"raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api", "auth", "signup"]}
+              }
+            },
+            {
+              "name": "2. Signup (Helper)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('helperToken', jsonData.data.token);", "    pm.environment.set('helperId', jsonData.data.user._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"firstName\": \"Alice\", \"lastName\": \"Worker\", \"email\": \"alice@example.com\", \"phone\": \"+2348087654321\", \"password\": \"SecurePass123!\", \"role\": \"worker\"}"},
+                "url": {"raw": "{{baseUrl}}/api/auth/signup", "host": ["{{baseUrl}}"], "path": ["api", "auth", "signup"]}
+              }
+            },
+            {
+              "name": "3. Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 200) {", "    var jsonData = pm.response.json();", "    pm.environment.set('token', jsonData.data.token);", "    pm.environment.set('userId', jsonData.data.user._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {"mode": "raw", "raw": "{\"email\": \"rockhealthy@example.com\", \"password\": \"SecurePass123!\"}"},
+                "url": {"raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"]}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wallet",
+          "item": [
+            {
+              "name": "1. Create Wallet (Owner)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('walletId', jsonData.data._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"bvn\": \"12345678901\", \"fullName\": \"Rock Healthy\", \"dateOfBirth\": \"1990-01-15\"}"},
+                "url": {"raw": "{{baseUrl}}/api/wallet/create", "host": ["{{baseUrl}}"], "path": ["api", "wallet", "create"]}
+              }
+            },
+            {
+              "name": "2. Get Wallet",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/wallet", "host": ["{{baseUrl}}"], "path": ["api", "wallet"]}
+              }
+            },
+            {
+              "name": "3. Get Balance",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/wallet/balance", "host": ["{{baseUrl}}"], "path": ["api", "wallet", "balance"]}
+              }
+            },
+            {
+              "name": "4. Get Transactions",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/wallet/transactions?limit=10&offset=0", "host": ["{{baseUrl}}"], "path": ["api", "wallet", "transactions"], "query": [{"key": "limit", "value": "10"}, {"key": "offset", "value": "0"}]}
+              }
+            },
+            {
+              "name": "5. Withdraw",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"amount\": 5000, \"bankAccount\": {\"accountNumber\": \"0123456789\", \"bankCode\": \"050\"}}"},
+                "url": {"raw": "{{baseUrl}}/api/wallet/withdraw", "host": ["{{baseUrl}}"], "path": ["api", "wallet", "withdraw"]}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Layer 2-3: Gigs & Bookings",
+      "item": [
+        {
+          "name": "Gigs",
+          "item": [
+            {
+              "name": "1. Post Sales Gig",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('gigId', jsonData.data._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"title\": \"iPhone 15 Sales\", \"description\": \"Sell iPhone 15 Pro Max phones. Commission based.\", \"workType\": \"sales\", \"category\": \"delivery\", \"productName\": \"iPhone 15 Pro Max\", \"productPrice\": 1500, \"commissionPercent\": 15, \"stockAvailable\": 50, \"starterStockValue\": 5000, \"skillLevelRequired\": \"intermediate\", \"evidenceRequired\": \"none\"}"},
+                "url": {"raw": "{{baseUrl}}/api/gigs", "host": ["{{baseUrl}}"], "path": ["api", "gigs"]}
+              }
+            },
+            {
+              "name": "2. Post Task Gig",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('taskGigId', jsonData.data._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"title\": \"Build a React Dashboard\", \"description\": \"Create a responsive dashboard with charts and tables.\", \"workType\": \"task\", \"category\": \"programming\", \"fixedPrice\": 500, \"deadline\": \"2026-06-01T00:00:00Z\", \"skillLevelRequired\": \"intermediate\", \"evidenceRequired\": \"none\", \"skills\": [\"React\", \"TypeScript\", \"Tailwind CSS\"]}"},
+                "url": {"raw": "{{baseUrl}}/api/gigs", "host": ["{{baseUrl}}"], "path": ["api", "gigs"]}
+              }
+            },
+            {
+              "name": "3. Get All Gigs",
+              "request": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/gigs?limit=10&page=1", "host": ["{{baseUrl}}"], "path": ["api", "gigs"], "query": [{"key": "limit", "value": "10"}, {"key": "page", "value": "1"}]}
+              }
+            },
+            {
+              "name": "4. Get Matched Gigs (AI)",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "url": {"raw": "{{baseUrl}}/api/gigs/matched?limit=10", "host": ["{{baseUrl}}"], "path": ["api", "gigs", "matched"], "query": [{"key": "limit", "value": "10"}]}
+              }
+            },
+            {
+              "name": "5. Get Gig Details",
+              "request": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/gigs/{{gigId}}", "host": ["{{baseUrl}}"], "path": ["api", "gigs", "{{gigId}}"]},
+                "comment": "Replace {{gigId}} with actual gig ID"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Applications & Bookings",
+          "item": [
+            {
+              "name": "1. Apply for Gig (Helper)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 201) {", "    var jsonData = pm.response.json();", "    pm.environment.set('contractId', jsonData.data._id);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "body": {"mode": "raw", "raw": "{\"gigId\": \"{{gigId}}\"}"},
+                "url": {"raw": "{{baseUrl}}/api/bookings", "host": ["{{baseUrl}}"], "path": ["api", "bookings"]}
+              }
+            },
+            {
+              "name": "2. Approve Application (Owner)",
+              "request": {
+                "method": "PATCH",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{}"},
+                "url": {"raw": "{{baseUrl}}/api/bookings/{{contractId}}/approve", "host": ["{{baseUrl}}"], "path": ["api", "bookings", "{{contractId}}", "approve"]}
+              }
+            },
+            {
+              "name": "3. Get My Bookings (Helper)",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "url": {"raw": "{{baseUrl}}/api/bookings?role=worker&limit=10&page=1", "host": ["{{baseUrl}}"], "path": ["api", "bookings"], "query": [{"key": "role", "value": "worker"}, {"key": "limit", "value": "10"}, {"key": "page", "value": "1"}]}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Layer 4: Squad Payment & Contracts",
+      "item": [
+        {
+          "name": "Sales Gig Flow",
+          "item": [
+            {
+              "name": "1. Record Stock Pickup (Helper)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "body": {"mode": "raw", "raw": "{\"quantity\": 5, \"value\": 7500}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/sales/record-pickup", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "sales", "record-pickup"]}
+              }
+            },
+            {
+              "name": "2. Generate Payment Link (Helper)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": ["if (pm.response.code === 200) {", "    var jsonData = pm.response.json();", "    pm.environment.set('paymentUrl', jsonData.data.paymentUrl);", "}"]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "body": {"mode": "raw", "raw": "{\"customerEmail\": \"customer@example.com\"}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/sales/payment-link", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "sales", "payment-link"]}
+              }
+            },
+            {
+              "name": "3. Get Sales Earnings",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/sales/earnings", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "sales", "earnings"]}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Task Gig Flow",
+          "item": [
+            {
+              "name": "1. Fund Escrow (Owner)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/task/fund-escrow", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "task", "fund-escrow"]}
+              }
+            },
+            {
+              "name": "2. Submit Deliverable (Helper)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "body": {"mode": "raw", "raw": "{\"notes\": \"Completed the dashboard with all requested features\", \"attachments\": [\"https://github.com/link-to-repo\"]}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/task/submit", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "task", "submit"]}
+              }
+            },
+            {
+              "name": "3. Approve & Release Escrow (Owner)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/task/approve", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "task", "approve"]}
+              }
+            },
+            {
+              "name": "4. Open Dispute (if needed)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"reason\": \"Work does not meet specifications\"}"},
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}/task/dispute", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}", "task", "dispute"]}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Contract Management",
+          "item": [
+            {
+              "name": "1. Get Contract Details",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/contracts/{{contractId}}", "host": ["{{baseUrl}}"], "path": ["api", "contracts", "{{contractId}}"]}
+              }
+            },
+            {
+              "name": "2. Get My Contracts",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/contracts?role=owner&limit=10&page=1", "host": ["{{baseUrl}}"], "path": ["api", "contracts"], "query": [{"key": "role", "value": "owner"}, {"key": "limit", "value": "10"}, {"key": "page", "value": "1"}]}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Layer 5: AI Service (Gemini)",
+      "item": [
+        {
+          "name": "1. Match Score (Gig Compatibility)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+            "body": {"mode": "raw", "raw": "{\"gigData\": {\"workType\": \"sales\", \"skillLevel\": \"intermediate\", \"evidenceRequired\": \"none\", \"productName\": \"iPhone 15\"}, \"helperProfile\": {\"skillLevel\": \"intermediate\", \"completedGigs\": 15, \"avgRating\": 4.8, \"totalEarnings\": 50000, \"recentActivity\": \"Completed 3 gigs in last 2 weeks\"}}"},
+            "url": {"raw": "{{baseUrl}}/api/ai/match-score", "host": ["{{baseUrl}}"], "path": ["api", "ai", "match-score"]}
+          }
+        },
+        {
+          "name": "2. Verify Evidence (Work Quality)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+            "body": {"mode": "raw", "raw": "{\"imageUrl\": \"base64_encoded_image_here\", \"claimedSkillLevel\": \"intermediate\", \"workType\": \"carpentry\"}"},
+            "url": {"raw": "{{baseUrl}}/api/ai/verify-evidence", "host": ["{{baseUrl}}"], "path": ["api", "ai", "verify-evidence"]}
+          }
+        },
+        {
+          "name": "3. Credit Score (Loan Eligibility)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+            "body": {"mode": "raw", "raw": "{\"transactionHistory\": {\"totalTransactions\": 45, \"totalVolume\": 500000, \"successRate\": 98, \"averageTransactionValue\": 11111, \"daysSinceFirstTransaction\": 180, \"chargebackCount\": 0, \"disputeCount\": 0, \"averageDaysToCompletion\": 3, \"recentPaymentSuccess\": true}}"},
+            "url": {"raw": "{{baseUrl}}/api/ai/credit-score", "host": ["{{baseUrl}}"], "path": ["api", "ai", "credit-score"]}
+          }
+        },
+        {
+          "name": "4. Detect Anomaly (Fraud Detection)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+            "body": {"mode": "raw", "raw": "{\"transactions\": [{\"id\": \"t1\", \"amount\": 50000, \"type\": \"credit\", \"timestamp\": \"2026-05-15T10:00:00Z\", \"status\": \"completed\"}]}"},
+            "url": {"raw": "{{baseUrl}}/api/ai/detect-anomaly", "host": ["{{baseUrl}}"], "path": ["api", "ai", "detect-anomaly"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Layer 6: Evidence & Reputation",
+      "item": [
+        {
+          "name": "Evidence",
+          "item": [
+            {
+              "name": "1. Upload Evidence Photos",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "body": {"mode": "formdata", "formdata": [{"key": "photos", "type": "file", "src": "/path/to/image.jpg"}, {"key": "contractId", "value": "{{contractId}}"}, {"key": "workType", "value": "task"}, {"key": "notes", "value": "Completed work photos\"}]},
+                "url": {"raw": "{{baseUrl}}/api/evidence/upload", "host": ["{{baseUrl}}"], "path": ["api", "evidence", "upload"]}
+              }
+            },
+            {
+              "name": "2. Get My Evidence",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "url": {"raw": "{{baseUrl}}/api/evidence?limit=10&offset=0", "host": ["{{baseUrl}}"], "path": ["api", "evidence"], "query": [{"key": "limit", "value": "10"}, {"key": "offset", "value": "0"}]}
+              }
+            },
+            {
+              "name": "3. Get Evidence Details",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{helperToken}}"}],
+                "url": {"raw": "{{baseUrl}}/api/evidence/{{evidenceId}}", "host": ["{{baseUrl}}"], "path": ["api", "evidence", "{{evidenceId}}"]}
+              }
+            },
+            {
+              "name": "4. Get Contract Evidence",
+              "request": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/evidence/contract/{{contractId}}", "host": ["{{baseUrl}}"], "path": ["api", "evidence", "contract", "{{contractId}}"]}
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reviews & Reputation",
+          "item": [
+            {
+              "name": "1. Post Review (After Completion)",
+              "request": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Authorization", "value": "Bearer {{token}}"}],
+                "body": {"mode": "raw", "raw": "{\"bookingId\": \"{{contractId}}\", \"rating\": 5, \"comment\": \"Excellent work, very professional and timely\", \"tags\": [\"punctual\", \"skilled\", \"professional\"]}"},
+                "url": {"raw": "{{baseUrl}}/api/reviews", "host": ["{{baseUrl}}"], "path": ["api", "reviews"]}
+              }
+            },
+            {
+              "name": "2. Get User Reputation (Authenticated)",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+                "url": {"raw": "{{baseUrl}}/api/reputation/{{helperId}}", "host": ["{{baseUrl}}"], "path": ["api", "reputation", "{{helperId}}"]}
+              }
+            },
+            {
+              "name": "3. Get Public Profile (Anyone)",
+              "request": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/reputation/public/{{helperId}}", "host": ["{{baseUrl}}"], "path": ["api", "reputation", "public", "{{helperId}}"]}
+              }
+            },
+            {
+              "name": "4. Get User Reviews",
+              "request": {
+                "method": "GET",
+                "url": {"raw": "{{baseUrl}}/api/reviews/{{helperId}}?limit=10&page=1", "host": ["{{baseUrl}}"], "path": ["api", "reviews", "{{helperId}}"], "query": [{"key": "limit", "value": "10"}, {"key": "page", "value": "1"}]}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Squad Payment Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-Squad-Signature", "value": "your_signature_here"}],
+            "body": {"mode": "raw", "raw": "{\"event\": \"charge.success\", \"data\": {\"reference\": \"payment_ref_123\", \"amount\": 50000, \"customer_id\": \"cust_123\", \"metadata\": {\"contractId\": \"{{contractId}}\"}}}"},
+            "url": {"raw": "{{baseUrl}}/webhooks/squad", "host": ["{{baseUrl}}"], "path": ["webhooks", "squad"]}
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": ["// Set default environment variables if not already set", "if (!pm.environment.get('baseUrl')) {", "    pm.environment.set('baseUrl', 'http://localhost:5000');", "}"]
+      }
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:5000", "type": "string"},
+    {"key": "token", "value": "", "type": "string"},
+    {"key": "userId", "value": "", "type": "string"},
+    {"key": "helperToken", "value": "", "type": "string"},
+    {"key": "helperId", "value": "", "type": "string"},
+    {"key": "gigId", "value": "", "type": "string"},
+    {"key": "taskGigId", "value": "", "type": "string"},
+    {"key": "contractId", "value": "", "type": "string"},
+    {"key": "walletId", "value": "", "type": "string"},
+    {"key": "evidenceId", "value": "", "type": "string"},
+    {"key": "paymentUrl", "value": "", "type": "string"}
+  ]
+}

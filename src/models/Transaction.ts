@@ -3,13 +3,15 @@ import { Schema, model, Document } from 'mongoose';
 export interface ITransaction extends Document {
   walletId: string;
   userId: string;
-  type: 'credit' | 'debit' | 'withdrawal' | 'deposit';
+  type: 'credit' | 'debit' | 'withdrawal' | 'deposit' | 'split' | 'escrow' | 'release';
   amount: number;
   fee?: number;
   netAmount: number;
   description: string;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
   reference: string;
+  squadTransactionId?: string; // Squad transaction ID for tracking
+  relatedContractId?: string; // Link to contract if payment-related
   metadata?: any; // For storing additional data like bank details, payment link, etc
   createdAt: Date;
   updatedAt: Date;
@@ -29,7 +31,7 @@ const transactionSchema = new Schema<ITransaction>(
     },
     type: {
       type: String,
-      enum: ['credit', 'debit', 'withdrawal', 'deposit'],
+      enum: ['credit', 'debit', 'withdrawal', 'deposit', 'split', 'escrow', 'release'],
       required: true,
       index: true,
     },
@@ -60,6 +62,17 @@ const transactionSchema = new Schema<ITransaction>(
       type: String,
       required: true,
       unique: true,
+      index: true,
+    },
+    squadTransactionId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    relatedContractId: {
+      type: String,
+      default: null,
       index: true,
     },
     metadata: {

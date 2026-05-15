@@ -88,6 +88,18 @@ export interface IJob {
   budget: number;
   clientId: string;
   status: JobStatus;
+  workType?: 'sales' | 'task';
+  skillLevelRequired?: 'beginner' | 'intermediate' | 'expert' | 'any';
+  evidenceRequired?: 'none' | 'photos' | 'videos' | 'documents';
+  // Sales-specific fields
+  productName?: string;
+  productPrice?: number;
+  commissionPercent?: number;
+  stockAvailable?: number;
+  starterStockValue?: number;
+  // Task-specific fields
+  fixedPrice?: number;
+  deadline?: Date;
   location?: {
     latitude?: number;
     longitude?: number;
@@ -138,6 +150,7 @@ export interface IReview {
   revieweeId: string;
   rating: number;
   comment: string;
+  tags?: string[]; // ["punctual", "honest", "skilled", etc]
   categories?: {
     communication?: number;
     professionalism?: number;

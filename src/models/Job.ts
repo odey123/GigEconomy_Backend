@@ -19,6 +19,12 @@ const jobSchema = new Schema<IJobDocument>(
       minlength: [20, 'Description must be at least 20 characters'],
       maxlength: [2000, 'Description cannot exceed 2000 characters'],
     },
+    workType: {
+      type: String,
+      enum: ['sales', 'task'],
+      required: [true, 'Work type is required (sales or task)'],
+      index: true,
+    },
     category: {
       type: String,
       enum: [
@@ -71,12 +77,68 @@ const jobSchema = new Schema<IJobDocument>(
       required: [true, 'Due date is required'],
     },
     estimatedDuration: String,
+    skillLevelRequired: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'expert', 'any'],
+      default: 'any',
+    },
+    evidenceRequired: {
+      type: String,
+      enum: ['none', 'photos', 'videos', 'documents'],
+      default: 'none',
+    },
     skills: [String],
     acceptedWorkerId: {
       type: String,
       default: null,
     },
     attachments: [String],
+    // Sales Gig Specific Fields
+    productName: {
+      type: String,
+      required: function (this: any) {
+        return this.workType === 'sales';
+      },
+    },
+    productPrice: {
+      type: Number,
+      required: function (this: any) {
+        return this.workType === 'sales';
+      },
+    },
+    commissionPercent: {
+      type: Number,
+      required: function (this: any) {
+        return this.workType === 'sales';
+      },
+      min: [0, 'Commission cannot be negative'],
+      max: [100, 'Commission cannot exceed 100%'],
+    },
+    stockAvailable: {
+      type: Number,
+      required: function (this: any) {
+        return this.workType === 'sales';
+      },
+    },
+    starterStockValue: {
+      type: Number,
+      required: function (this: any) {
+        return this.workType === 'sales';
+      },
+    },
+    // Task Gig Specific Fields
+    fixedPrice: {
+      type: Number,
+      required: function (this: any) {
+        return this.workType === 'task';
+      },
+    },
+    deadline: {
+      type: Date,
+      required: function (this: any) {
+        return this.workType === 'task';
+      },
+    },
   },
   {
     timestamps: true,

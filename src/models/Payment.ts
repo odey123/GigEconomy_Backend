@@ -38,7 +38,13 @@ const paymentSchema = new Schema<IPaymentDocument>(
       index: true,
     },
     paymentMethod: String,
-    stripePaymentId: {
+    squadPaymentId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    squadReference: {
       type: String,
       unique: true,
       sparse: true,

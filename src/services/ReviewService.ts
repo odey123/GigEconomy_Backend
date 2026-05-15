@@ -5,6 +5,7 @@ export interface CreateReviewDTO {
   bookingId: string;
   rating: number;
   comment: string;
+  tags?: string[];
   categories?: {
     communication?: number;
     professionalism?: number;
@@ -70,6 +71,7 @@ export class ReviewService {
       revieweeId,
       rating: data.rating,
       comment: data.comment,
+      tags: data.tags,
       categories: data.categories,
     });
 

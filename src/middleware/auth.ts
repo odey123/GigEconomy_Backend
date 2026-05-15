@@ -62,6 +62,16 @@ export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFu
 };
 
 /**
+ * Default export for compatibility
+ */
+export default authMiddleware;
+
+/**
+ * Alias for auth middleware
+ */
+export const authenticate = authMiddleware;
+
+/**
  * Middleware to require specific role
  */
 export const requireRole = (roles: string[]) => {

@@ -11,8 +11,8 @@ export class ReviewController {
 
   /**
    * Create a review for a booking
-   * POST /api/reviews
-   * Body: { bookingId, rating, comment, categories? }
+   * POST /api/contracts/:id/review
+   * Body: { rating, comment, tags? }
    */
   public createReview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -20,7 +20,7 @@ export class ReviewController {
         throw new UnauthorizedError('User not authenticated');
       }
 
-      const { bookingId, rating, comment, categories } = req.body;
+      const { bookingId, rating, comment, categories, tags } = req.body;
 
       if (!bookingId || rating === undefined || !comment) {
         throw new ValidationError('bookingId, rating, and comment are required');
@@ -34,11 +34,22 @@ export class ReviewController {
         throw new ValidationError('comment cannot be empty');
       }
 
+      // Validate tags if provided
+      const validTags = ['punctual', 'honest', 'skilled', 'professional', 'responsive', 'careless', 'unreliable', 'unfriendly'];
+      if (tags && Array.isArray(tags)) {
+        for (const tag of tags) {
+          if (!validTags.includes(tag)) {
+            throw new ValidationError(`Invalid tag: ${tag}`);
+          }
+        }
+      }
+
       const createReviewDTO: CreateReviewDTO = {
         bookingId,
         rating,
         comment,
         categories,
+        tags,
       };
 
       const review = await this.reviewService.createReview(req.userId, createReviewDTO);

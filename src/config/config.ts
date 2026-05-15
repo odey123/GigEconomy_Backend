@@ -25,12 +25,18 @@ interface Config {
   smtpUser: string;
   smtpPassword: string;
   smtpFromEmail: string;
+  squadApiBaseUrl: string;
+  squadApiKey: string;
+  squadWebhookSecret: string;
   stripePublicKey: string;
   stripeSecretKey: string;
   awsRegion: string;
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsS3Bucket: string;
+  geminiApiKey: string;
+  maxFileSize: number;
+  maxFilesPerUpload: number;
   enableEmailNotifications: boolean;
   enablePaymentProcessing: boolean;
 }
@@ -58,12 +64,18 @@ const config: Config = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   smtpFromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@gigeconomy.com',
+  squadApiBaseUrl: process.env.SQUAD_API_BASE_URL || 'https://api.sandbox.squad.co',
+  squadApiKey: process.env.SQUAD_API_KEY || '',
+  squadWebhookSecret: process.env.SQUAD_WEBHOOK_SECRET || '',
   stripePublicKey: process.env.STRIPE_PUBLIC_KEY || '',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
   awsRegion: process.env.AWS_REGION || 'us-east-1',
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   awsS3Bucket: process.env.AWS_S3_BUCKET || '',
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880'), // 5MB default
+  maxFilesPerUpload: parseInt(process.env.MAX_FILES_PER_UPLOAD || '10'),
   enableEmailNotifications: process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true',
   enablePaymentProcessing: process.env.ENABLE_PAYMENT_PROCESSING === 'true',
 };
