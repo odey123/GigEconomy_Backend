@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Job } from '../models/Job';
-import { ValidationError, NotFoundError, UnauthorizedError, ForbiddenError } from '../utils/errors';
+import { User } from '../models/User';
+import { ValidationError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import GeminiService from '../services/GeminiService';
 
 export class GigsController {
   /**
@@ -8,6 +10,7 @@ export class GigsController {
    * POST /api/gigs
    * Body: {
    *   workType: "sales" | "task",
+   *   category: "cleaning" | "delivery" | ... (required),
    *   title, description, location, skillLevelRequired, evidenceRequired,
    *   // Sales-specific
    *   productName, productPrice, commissionPercent, stockAvailable, starterStockValue,
@@ -23,6 +26,7 @@ export class GigsController {
 
       const {
         workType,
+        category,
         title,
         description,
         location,
@@ -44,6 +48,10 @@ export class GigsController {
         throw new ValidationError('Valid workType (sales or task) is required');
       }
 
+      if (!category) {
+        throw new ValidationError('Category is required');
+      }
+
       if (!title || !description || !location) {
         throw new ValidationError('Title, description, and location are required');
       }
@@ -62,13 +70,14 @@ export class GigsController {
       // Create gig with appropriate fields
       const gigData: any = {
         workType,
+        category,
         title,
         description,
         location,
         skillLevelRequired: skillLevelRequired || 'any',
         evidenceRequired: evidenceRequired || 'none',
-        ownerId: req.userId,
-        status: 'active',
+        clientId: req.userId,
+        status: 'open',
       };
 
       // Add work-type specific fields
@@ -78,25 +87,27 @@ export class GigsController {
         gigData.commissionPercent = commissionPercent;
         gigData.stockAvailable = stockAvailable;
         gigData.starterStockValue = starterStockValue;
+        gigData.budget = productPrice || 0;
+        gigData.dueDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days default
       } else if (workType === 'task') {
         gigData.fixedPrice = fixedPrice;
         gigData.deadline = deadline;
+        gigData.budget = fixedPrice || 0;
+        gigData.dueDate = deadline;
       }
 
-      // TODO: Create Job document with work-type schema
-      // For now, we'll use a placeholder response
-      const gig = {
-        _id: `gig_${Date.now()}`,
-        ...gigData,
-        createdAt: new Date(),
-      };
+      // Save to database
+      const gig = await Job.create(gigData);
 
       res.status(201).json({
         status: 'success',
         message: 'Gig created successfully',
         data: {
-          gigId: gig._id,
+          _id: gig._id,
+          workType: gig.workType,
+          title: gig.title,
           status: gig.status,
+          createdAt: gig.createdAt,
         },
       });
     } catch (error) {
@@ -107,7 +118,7 @@ export class GigsController {
   /**
    * Get matched gigs for helper (AI-ranked by location, skill, work type)
    * GET /api/gigs/matched
-   * Query params: ?workType=sales&lat=&lng=&radius=
+   * Query params: ?workType=sales&radius=50&limit=10&page=1
    */
   public getMatchedGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -115,36 +126,102 @@ export class GigsController {
         throw new UnauthorizedError('User not authenticated');
       }
 
-      const { workType, lat, lng, radius = 50 } = req.query;
+      const { workType, limit = '10', page = '1' } = req.query;
+      const pageNum = parseInt(page as string, 10) || 1;
+      const limitNum = parseInt(limit as string, 10) || 10;
 
-      // TODO: Implement AI matching algorithm
-      // 1. Query gigs by location (lat/lng + radius)
-      // 2. Filter by workType if provided
-      // 3. Score matches based on helper's skills and preferences
-      // 4. Sort by AI score descending
-      // 5. Return with match scores
+      // Get worker's profile
+      const worker = await User.findById(req.userId).select('skills experience location preferences').lean();
+      if (!worker) {
+        throw new NotFoundError('Worker profile not found');
+      }
 
-      // Mock response for now
-      const matchedGigs = [
-        {
-          _id: 'gig_001',
-          workType: 'sales',
-          title: 'Sell Health Products',
-          description: 'Help sell Rock Healthy health supplements',
-          productName: 'Vitamin D Supplement',
-          productPrice: 5000,
-          commissionPercent: 15,
-          location: { address: 'Lagos, Nigeria', lat: 6.5244, lng: 3.3792 },
-          aiMatchScore: 92,
-          matchReason: 'High match: Location nearby, relevant skills',
-        },
-      ];
+      // Build query for gigs
+      const query: any = { status: 'open' };
+      if (workType && ['sales', 'task'].includes(workType as string)) {
+        query.workType = workType;
+      }
+
+      // Fetch gigs for matching
+      const gigs = await Job.find(query)
+        .select(
+          '_id workType category title description productName productPrice commissionPercent fixedPrice location skillLevelRequired evidenceRequired'
+        )
+        .sort({ createdAt: -1 })
+        .limit(limitNum * 2) // Get more to account for Gemini filtering
+        .lean();
+
+      if (gigs.length === 0) {
+        res.status(200).json({
+          status: 'success',
+          data: {
+            gigs: [],
+            count: 0,
+            pagination: { page: pageNum, limit: limitNum, total: 0, pages: 0 },
+          },
+        });
+        return;
+      }
+
+      // Score gigs with Gemini
+      const gigMatchRequests = gigs.map((g: any) => ({
+        gigId: g._id.toString(),
+        gigTitle: g.title,
+        workType: g.workType,
+        category: g.category,
+        description: g.description,
+        requiredSkills: g.skillLevelRequired ? [g.skillLevelRequired] : [],
+        location: g.location,
+        salary: g.productPrice || g.fixedPrice,
+      }));
+
+      const workerProfile = {
+        workerId: req.userId,
+        skills: (worker as any).skills || [],
+        experience: (worker as any).experience,
+        location: (worker as any).location,
+        preferences: (worker as any).preferences,
+      };
+
+      const matchScores = await GeminiService.scoreGigsForWorker(workerProfile, gigMatchRequests);
+
+      // Create a map of scores for easy lookup
+      const scoreMap = new Map(matchScores.map((s) => [s.gigId, s]));
+
+      // Build response with scores
+      const matchedGigs = gigs
+        .map((g: any) => {
+          const score = scoreMap.get(g._id.toString());
+          return {
+            _id: g._id,
+            title: g.title,
+            description: g.description,
+            workType: g.workType,
+            category: g.category,
+            productName: g.productName,
+            productPrice: g.productPrice,
+            commissionPercent: g.commissionPercent,
+            fixedPrice: g.fixedPrice,
+            location: g.location,
+            skillLevelRequired: g.skillLevelRequired,
+            aiMatchScore: score?.score || 50,
+            matchReason: score?.reasoning || 'Unable to determine match',
+          };
+        })
+        .sort((a, b) => b.aiMatchScore - a.aiMatchScore)
+        .slice(0, limitNum);
 
       res.status(200).json({
         status: 'success',
         data: {
           gigs: matchedGigs,
           count: matchedGigs.length,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: gigs.length,
+            pages: Math.ceil(gigs.length / limitNum),
+          },
         },
       });
     } catch (error) {
@@ -160,34 +237,31 @@ export class GigsController {
     try {
       const { id } = req.params;
 
-      // TODO: Fetch gig from database
-      // TODO: Include owner snippet (name, rating, reviewCount)
-
-      // Mock response for now
-      const gig = {
-        _id: id,
-        workType: 'sales',
-        title: 'Sell Health Products',
-        description: 'Help sell Rock Healthy health supplements in Lagos',
-        productName: 'Vitamin D Supplement',
-        productPrice: 5000,
-        commissionPercent: 15,
-        stockAvailable: 100,
-        location: { address: 'Lagos, Nigeria', lat: 6.5244, lng: 3.3792 },
-        skillLevelRequired: 'beginner',
-        evidenceRequired: 'none',
-        owner: {
-          _id: 'owner_001',
-          name: 'Rock Healthy',
-          rating: 4.8,
-          reviewCount: 145,
-        },
-      };
+      const gig = await Job.findById(id);
+      if (!gig) {
+        throw new NotFoundError('Gig');
+      }
 
       res.status(200).json({
         status: 'success',
         data: {
-          gig,
+          _id: gig._id,
+          title: gig.title,
+          description: gig.description,
+          workType: gig.workType,
+          status: gig.status,
+          clientId: gig.clientId,
+          location: gig.location,
+          skillLevelRequired: gig.skillLevelRequired,
+          evidenceRequired: gig.evidenceRequired,
+          productName: (gig as any).productName,
+          productPrice: (gig as any).productPrice,
+          commissionPercent: (gig as any).commissionPercent,
+          stockAvailable: (gig as any).stockAvailable,
+          fixedPrice: (gig as any).fixedPrice,
+          deadline: (gig as any).deadline,
+          createdAt: gig.createdAt,
+          updatedAt: gig.updatedAt,
         },
       });
     } catch (error) {
@@ -202,31 +276,46 @@ export class GigsController {
    */
   public listGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { workType, lat, lng, radius = 50, page = 1, limit = 20 } = req.query;
+      const { workType, page = '1', limit = '20' } = req.query;
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = Math.min(parseInt(limit as string) || 20, 100);
+      const skip = (pageNum - 1) * limitNum;
 
-      // TODO: Query gigs with filters
-      // TODO: Apply pagination
+      const query: any = { status: { $in: ['open', 'active'] } };
+      if (workType) {
+        query.workType = workType;
+      }
 
-      // Mock response
-      const gigs = [
-        {
-          _id: 'gig_001',
-          workType: 'sales',
-          title: 'Sell Health Products',
-          productName: 'Vitamin D Supplement',
-          location: { address: 'Lagos, Nigeria' },
-          commissionPercent: 15,
-        },
-      ];
+      const [gigs, total] = await Promise.all([
+        Job.find(query)
+          .select('_id title description workType status clientId productName productPrice commissionPercent fixedPrice location')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limitNum),
+        Job.countDocuments(query),
+      ]);
 
       res.status(200).json({
         status: 'success',
         data: {
-          gigs,
+          gigs: gigs.map((g: any) => ({
+            _id: g._id,
+            title: g.title,
+            description: g.description,
+            workType: g.workType,
+            status: g.status,
+            clientId: g.clientId,
+            productName: g.productName,
+            productPrice: g.productPrice,
+            commissionPercent: g.commissionPercent,
+            fixedPrice: g.fixedPrice,
+            location: g.location,
+          })),
           pagination: {
-            page: parseInt(page as string),
-            limit: parseInt(limit as string),
-            total: 1,
+            page: pageNum,
+            limit: limitNum,
+            total,
+            pages: Math.ceil(total / limitNum),
           },
         },
       });
@@ -245,23 +334,21 @@ export class GigsController {
         throw new UnauthorizedError('User not authenticated');
       }
 
-      // TODO: Query gigs where ownerId === req.userId
-
-      // Mock response
-      const gigs = [
-        {
-          _id: 'gig_001',
-          title: 'Sell Health Products',
-          status: 'active',
-          applicants: 5,
-          views: 150,
-        },
-      ];
+      const gigs = await Job.find({ clientId: req.userId })
+        .select('_id title description workType status clientId createdAt')
+        .sort({ createdAt: -1 });
 
       res.status(200).json({
         status: 'success',
         data: {
-          gigs,
+          gigs: gigs.map((g) => ({
+            _id: g._id,
+            title: g.title,
+            description: g.description,
+            workType: g.workType,
+            status: g.status,
+            createdAt: g.createdAt,
+          })),
         },
       });
     } catch (error) {
@@ -280,13 +367,29 @@ export class GigsController {
       }
 
       const { id } = req.params;
+      const updates = req.body;
 
-      // TODO: Verify ownership
-      // TODO: Update gig document
+      // Verify ownership
+      const gig = await Job.findById(id);
+      if (!gig) {
+        throw new NotFoundError('Gig');
+      }
+
+      if (gig.clientId !== req.userId) {
+        throw new UnauthorizedError('You can only update your own gigs');
+      }
+
+      // Update the gig document
+      const updatedGig = await Job.findByIdAndUpdate(
+        id,
+        { $set: updates },
+        { new: true, runValidators: true }
+      );
 
       res.status(200).json({
         status: 'success',
         message: 'Gig updated successfully',
+        data: updatedGig,
       });
     } catch (error) {
       next(error);
@@ -305,8 +408,18 @@ export class GigsController {
 
       const { id } = req.params;
 
-      // TODO: Verify ownership
-      // TODO: Close/delete gig
+      // Verify ownership
+      const gig = await Job.findById(id);
+      if (!gig) {
+        throw new NotFoundError('Gig');
+      }
+
+      if (gig.clientId !== req.userId) {
+        throw new UnauthorizedError('You can only delete your own gigs');
+      }
+
+      // Delete the gig document
+      await Job.findByIdAndDelete(id);
 
       res.status(200).json({
         status: 'success',
