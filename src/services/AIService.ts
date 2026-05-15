@@ -253,7 +253,7 @@ Eligibility thresholds: microCredit (score >= 400), instantPayouts (score >= 600
       };
     } catch (error) {
       logger.error('Error in creditScore:', error);
-      throw new AppError('Failed to calculate credit score', 500);
+      throw new AppError(500, 'Failed to calculate credit score');
     }
   }
 
