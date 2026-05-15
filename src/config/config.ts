@@ -64,7 +64,7 @@ const config: Config = {
   smtpUser: process.env.SMTP_USER || '',
   smtpPassword: process.env.SMTP_PASSWORD || '',
   smtpFromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@gigeconomy.com',
-  squadApiBaseUrl: process.env.SQUAD_API_BASE_URL || 'https://api.sandbox.squad.co',
+  squadApiBaseUrl: process.env.SQUAD_API_BASE_URL || 'https://sandbox-api-d.squadco.com/v1',
   squadApiKey: process.env.SQUAD_API_KEY || '',
   squadWebhookSecret: process.env.SQUAD_WEBHOOK_SECRET || '',
   stripePublicKey: process.env.STRIPE_PUBLIC_KEY || '',

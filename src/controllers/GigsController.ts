@@ -20,9 +20,7 @@ export class GigsController {
    */
   public createGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.userId) {
-        throw new UnauthorizedError('User not authenticated');
-      }
+      if (!req.userId) throw new UnauthorizedError('User not authenticated');
 
       const {
         workType,
@@ -43,7 +41,6 @@ export class GigsController {
         deadline,
       } = req.body;
 
-      // Validate common fields
       if (!workType || !['sales', 'task'].includes(workType)) {
         throw new ValidationError('Valid workType (sales or task) is required');
       }
@@ -55,19 +52,13 @@ export class GigsController {
       if (!title || !description || !location) {
         throw new ValidationError('Title, description, and location are required');
       }
-
-      // Validate work-type specific fields
-      if (workType === 'sales') {
-        if (!productName || !productPrice || !commissionPercent) {
-          throw new ValidationError('Sales gig requires productName, productPrice, and commissionPercent');
-        }
-      } else if (workType === 'task') {
-        if (!fixedPrice || !deadline) {
-          throw new ValidationError('Task gig requires fixedPrice and deadline');
-        }
+      if (workType === 'sales' && (!productName || !productPrice || !commissionPercent)) {
+        throw new ValidationError('Sales gig requires productName, productPrice, and commissionPercent');
+      }
+      if (workType === 'task' && (!fixedPrice || !deadline)) {
+        throw new ValidationError('Task gig requires fixedPrice and deadline');
       }
 
-      // Create gig with appropriate fields
       const gigData: any = {
         workType,
         category,
@@ -79,8 +70,6 @@ export class GigsController {
         clientId: req.userId,
         status: 'open',
       };
-
-      // Add work-type specific fields
       if (workType === 'sales') {
         gigData.productName = productName;
         gigData.productPrice = productPrice;
@@ -110,9 +99,7 @@ export class GigsController {
           createdAt: gig.createdAt,
         },
       });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
   /**
@@ -229,10 +216,6 @@ export class GigsController {
     }
   };
 
-  /**
-   * Get gig details
-   * GET /api/gigs/:id
-   */
   public getGigDetail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
@@ -269,11 +252,6 @@ export class GigsController {
     }
   };
 
-  /**
-   * Get public gig listings with filters
-   * GET /api/gigs
-   * Query params: ?workType=sales&lat=&lng=&radius=&page=1&limit=20
-   */
   public listGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { workType, page = '1', limit = '20' } = req.query;
@@ -319,15 +297,9 @@ export class GigsController {
           },
         },
       });
-    } catch (error) {
-      next(error);
-    }
+    } catch (error) { next(error); }
   };
 
-  /**
-   * Get owner's posted gigs
-   * GET /api/gigs/mine
-   */
   public getMyGigs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.userId) {
@@ -356,10 +328,6 @@ export class GigsController {
     }
   };
 
-  /**
-   * Update a gig (owner only)
-   * PATCH /api/gigs/:id
-   */
   public updateGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.userId) {
@@ -396,10 +364,6 @@ export class GigsController {
     }
   };
 
-  /**
-   * Delete/close a gig (owner only)
-   * DELETE /api/gigs/:id
-   */
   public deleteGig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.userId) {

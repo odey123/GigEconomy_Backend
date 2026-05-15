@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Contract, Wallet, Transaction } from '../models';
+import { ContractStatus } from '../models/Contract';
 import WalletService from '../services/WalletService';
+import config from '../config/config';
 import logger from '../utils/logger';
 import crypto from 'crypto';
 
@@ -13,9 +15,8 @@ export class SquadWebhookController {
   /**
    * Verify webhook signature from Squad
    */
-  private verifyWebhookSignature(payload: string, signature: string): boolean {
-    const secret = process.env.SQUAD_WEBHOOK_SECRET || '';
-    const hash = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  private verifyWebhookSignature(rawBody: Buffer, signature: string): boolean {
+    const hash = crypto.createHmac('sha256', config.squadWebhookSecret).update(rawBody).digest('hex');
     return hash === signature;
   }
 
@@ -26,14 +27,14 @@ export class SquadWebhookController {
   public handlePayment = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
   ): Promise<void> => {
     try {
       const signature = req.headers['x-squad-signature'] as string;
-      const payload = JSON.stringify(req.body);
+      const rawBody: Buffer = (req as any).rawBody;
 
-      // Verify webhook signature
-      if (!this.verifyWebhookSignature(payload, signature)) {
+      // Verify webhook signature against the original raw bytes
+      if (!this.verifyWebhookSignature(rawBody, signature)) {
         logger.warn('Invalid Squad webhook signature');
         res.status(401).json({ status: 'error', message: 'Invalid signature' });
         return;
@@ -77,7 +78,7 @@ export class SquadWebhookController {
    * Handle successful charge (customer paid)
    */
   private async handleChargeSuccess(data: any): Promise<void> {
-    const { reference, amount, customer_id, metadata } = data;
+    const { reference, amount } = data;
 
     logger.info('Processing charge success', { reference, amount });
 
@@ -91,7 +92,7 @@ export class SquadWebhookController {
       if (contract.salesData) {
         contract.salesData.paymentStatus = 'completed';
       }
-      contract.status = 'active'; // Sales gig is now active
+      contract.status = ContractStatus.ACTIVE;
 
       await contract.save();
 
@@ -111,6 +112,7 @@ export class SquadWebhookController {
           relatedContractId: contract._id.toString(),
           status: 'completed',
         });
+        await WalletService.updateBalance(contract.ownerId, contract.salesData.ownerAmount, 'credit');
       }
 
       if (helperWallet && contract.salesData) {
@@ -125,6 +127,7 @@ export class SquadWebhookController {
           relatedContractId: contract._id.toString(),
           status: 'completed',
         });
+        await WalletService.updateBalance(contract.helperId, contract.salesData.helperCommission, 'credit');
       }
 
       logger.info('Charge success processed', { contractId: contract._id });
@@ -230,7 +233,7 @@ export class SquadWebhookController {
     if (contract && contract.taskData) {
       contract.taskData.escrowStatus = 'released';
       contract.taskData.completionDate = new Date();
-      contract.status = 'completed';
+      contract.status = ContractStatus.COMPLETED;
       await contract.save();
 
       logger.info('Escrow release processed', { contractId: contract._id });

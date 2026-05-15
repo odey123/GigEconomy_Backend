@@ -38,6 +38,10 @@ logs/
 .npm
 
 # Optional REPL history
+.venv/
+
+# Uploaded files
+uploads/
 .node_repl_history
 
 # Temporary files

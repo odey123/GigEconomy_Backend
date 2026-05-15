@@ -1,6 +1,5 @@
 import { Review, Booking, User } from '../models';
-import { WalletService } from './WalletService';
-import { EvidenceService } from './EvidenceService';
+import evidenceService from './EvidenceService';
 import logger from '../utils/logger';
 import { AppError } from '../utils/errors';
 
@@ -55,7 +54,7 @@ class ReputationService {
         .map(([tag]) => tag);
 
       // Get evidence verification rate
-      const evidenceStats = await EvidenceService.getEvidenceStats(userId);
+      const evidenceStats = await evidenceService.getEvidenceStats(userId);
       const evidenceVerificationRate =
         evidenceStats.totalUploads > 0
           ? (evidenceStats.verifiedCount / evidenceStats.totalUploads) * 100
@@ -80,7 +79,7 @@ class ReputationService {
       };
     } catch (error) {
       logger.error('Error calculating reputation summary:', error);
-      throw new AppError('Failed to calculate reputation', 500);
+      throw new AppError(500, 'Failed to calculate reputation');
     }
   }
 
@@ -92,7 +91,7 @@ class ReputationService {
     try {
       const user = await User.findById(userId);
       if (!user) {
-        throw new AppError('User not found', 404);
+        throw new AppError(404, 'User not found');
       }
 
       const reviews = await Review.find({ revieweeId: userId }).sort({ createdAt: -1 }).limit(5);

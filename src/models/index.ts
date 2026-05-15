@@ -12,3 +12,4 @@ export { Notification, type INotificationDocument } from './Notification';
 export { Wallet, type IWallet } from './Wallet';
 export { Transaction, type ITransaction } from './Transaction';
 export { Evidence, type IEvidenceDocument, type AIAnalysis } from './Evidence';
+export { LoanApplication, type ILoanApplication, type LoanType, type LoanStatus } from './LoanApplication';
