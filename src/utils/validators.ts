@@ -102,6 +102,22 @@ export const paymentValidationSchemas = {
   }),
 };
 
+export const walletValidationSchemas = {
+  create: Joi.object({
+    bvn: Joi.string().required().length(11),
+    fullName: Joi.string().required().min(2).max(100),
+    dateOfBirth: Joi.date().required(),
+  }),
+
+  withdraw: Joi.object({
+    amount: Joi.number().required().positive(),
+    bankAccount: Joi.object({
+      accountNumber: Joi.string().required().length(10),
+      bankCode: Joi.string().required(),
+    }).required(),
+  }),
+};
+
 /**
  * Validate data against a schema
  */

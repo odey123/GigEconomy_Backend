@@ -19,18 +19,18 @@ class EvidenceService {
   async uploadEvidence(payload: UploadPhotoPayload): Promise<any> {
     try {
       if (!payload.files || payload.files.length === 0) {
-        throw new AppError('At least one photo is required', 400);
+        throw new AppError(400, 'At least one photo is required');
       }
 
       // Validate file types (only images)
       const validMimes = ['image/jpeg', 'image/png', 'image/webp'];
       for (const file of payload.files) {
         if (!validMimes.includes(file.mimetype)) {
-          throw new AppError(`Invalid file type: ${file.mimetype}. Only JPEG, PNG, and WebP are allowed`, 400);
+          throw new AppError(400, `Invalid file type: ${file.mimetype}. Only JPEG, PNG, and WebP are allowed`);
         }
         if (file.size > 5 * 1024 * 1024) {
           // 5MB limit
-          throw new AppError(`File too large: ${file.originalname}. Max 5MB per file`, 400);
+          throw new AppError(400, `File too large: ${file.originalname}. Max 5MB per file`);
         }
       }
 
@@ -137,7 +137,7 @@ class EvidenceService {
       return { evidence, total };
     } catch (error) {
       logger.error('Error fetching user evidence:', error);
-      throw new AppError('Failed to fetch evidence', 500);
+      throw new AppError(500, 'Failed to fetch evidence');
     }
   }
 
@@ -149,7 +149,7 @@ class EvidenceService {
       return await Evidence.findOne({ contractId });
     } catch (error) {
       logger.error('Error fetching contract evidence:', error);
-      throw new AppError('Failed to fetch evidence', 500);
+      throw new AppError(500, 'Failed to fetch evidence');
     }
   }
 
@@ -161,7 +161,7 @@ class EvidenceService {
       return await Evidence.findById(evidenceId);
     } catch (error) {
       logger.error('Error fetching evidence:', error);
-      throw new AppError('Failed to fetch evidence', 500);
+      throw new AppError(500, 'Failed to fetch evidence');
     }
   }
 
@@ -186,7 +186,7 @@ class EvidenceService {
       return await Evidence.findByIdAndUpdate(evidenceId, updateData, { new: true });
     } catch (error) {
       logger.error('Error updating evidence status:', error);
-      throw new AppError('Failed to update evidence', 500);
+      throw new AppError(500, 'Failed to update evidence');
     }
   }
 
@@ -235,7 +235,7 @@ class EvidenceService {
       };
     } catch (error) {
       logger.error('Error getting evidence stats:', error);
-      throw new AppError('Failed to get evidence stats', 500);
+      throw new AppError(500, 'Failed to get evidence stats');
     }
   }
 

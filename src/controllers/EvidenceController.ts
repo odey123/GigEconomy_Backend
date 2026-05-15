@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { EvidenceService } from '../services/EvidenceService';
+import EvidenceService from '../services/EvidenceService';
 import logger from '../utils/logger';
 import { AppError } from '../utils/errors';
 
@@ -22,21 +22,21 @@ class EvidenceController {
   async uploadEvidence(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
-        throw new AppError('User not authenticated', 401);
+        throw new AppError(401, 'User not authenticated');
       }
 
       if (!req.files || req.files.length === 0) {
-        throw new AppError('At least one photo is required', 400);
+        throw new AppError(400, 'At least one photo is required');
       }
 
       const { contractId, workType, notes } = req.body;
 
       if (!contractId) {
-        throw new AppError('contractId is required', 400);
+        throw new AppError(400, 'contractId is required');
       }
 
       if (!workType || !['sales', 'task'].includes(workType)) {
-        throw new AppError('workType must be "sales" or "task"', 400);
+        throw new AppError(400, 'workType must be "sales" or "task"');
       }
 
       logger.info(`Uploading evidence for user ${req.userId}, contract ${contractId}`);
@@ -65,7 +65,7 @@ class EvidenceController {
   async getUserEvidence(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
-        throw new AppError('User not authenticated', 401);
+        throw new AppError(401, 'User not authenticated');
       }
 
       const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
@@ -91,13 +91,13 @@ class EvidenceController {
   async getEvidenceById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.userId) {
-        throw new AppError('User not authenticated', 401);
+        throw new AppError(401, 'User not authenticated');
       }
 
       const { evidenceId } = req.params;
 
       if (!evidenceId) {
-        throw new AppError('Evidence ID is required', 400);
+        throw new AppError(400, 'Evidence ID is required');
       }
 
       logger.info(`Fetching evidence ${evidenceId}`);
@@ -105,12 +105,12 @@ class EvidenceController {
       const evidence = await EvidenceService.getEvidenceById(evidenceId);
 
       if (!evidence) {
-        throw new AppError('Evidence not found', 404);
+        throw new AppError(404, 'Evidence not found');
       }
 
       // Verify ownership or admin
       if (evidence.userId !== req.userId && req.user?.role !== 'admin') {
-        throw new AppError('Unauthorized access to this evidence', 403);
+        throw new AppError(403, 'Unauthorized access to this evidence');
       }
 
       res.status(200).json({
@@ -131,7 +131,7 @@ class EvidenceController {
       const { contractId } = req.params;
 
       if (!contractId) {
-        throw new AppError('Contract ID is required', 400);
+        throw new AppError(400, 'Contract ID is required');
       }
 
       logger.info(`Fetching evidence for contract ${contractId}`);

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import userService from '../services/UserService';
-import { ValidationError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import { ValidationError, UnauthorizedError } from '../utils/errors';
 import type { UpdateUserDTO } from '../utils/dtos';
 
 export class UsersController {
