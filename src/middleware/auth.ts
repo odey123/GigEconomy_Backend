@@ -17,7 +17,7 @@ declare global {
 /**
  * Auth middleware to verify JWT token
  */
-export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -42,7 +42,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 /**
  * Optional auth middleware (doesn't fail if no token)
  */
-export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+export const optionalAuthMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -75,7 +75,7 @@ export const authenticate = authMiddleware;
  * Middleware to require specific role
  */
 export const requireRole = (roles: string[]) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.userId) {
         throw new UnauthorizedError('User not authenticated');

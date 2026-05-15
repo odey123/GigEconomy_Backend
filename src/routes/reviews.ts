@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import reviewController from '../controllers/ReviewController';
-import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 

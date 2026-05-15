@@ -1,4 +1,5 @@
-import { Contract, Job, Wallet, Transaction, type IContract } from '../models';
+import { Contract, Wallet, type IContract } from '../models';
+import { ContractStatus } from '../models/Contract';
 import SquadService from './SquadService';
 import WalletService from './WalletService';
 import { NotFoundError, ValidationError } from '../utils/errors';
@@ -271,7 +272,7 @@ export class ContractService {
       contract.taskData.escrowReference = reference;
       contract.taskData.escrowAmount = amount;
       contract.taskData.escrowStatus = 'funded';
-      contract.status = 'active';
+      contract.status = ContractStatus.ACTIVE;
 
       await contract.save();
 
@@ -310,7 +311,7 @@ export class ContractService {
 
     contract.taskData.deliverables = data.deliverableNotes;
     contract.taskData.submissionDate = new Date();
-    contract.status = 'completed'; // Pending owner approval
+    contract.status = ContractStatus.COMPLETED; // Pending owner approval
 
     await contract.save();
 
@@ -379,7 +380,7 @@ export class ContractService {
       contract.taskData.escrowStatus = 'released';
       contract.taskData.completionDate = new Date();
       contract.taskData.approvalDate = new Date();
-      contract.status = 'completed';
+      contract.status = ContractStatus.COMPLETED;
 
       await contract.save();
 
@@ -408,7 +409,7 @@ export class ContractService {
       throw new ValidationError('This endpoint is only for task gigs');
     }
 
-    contract.status = 'disputed';
+    contract.status = ContractStatus.DISPUTED;
     if (contract.taskData) {
       contract.taskData.escrowStatus = 'disputed';
     }

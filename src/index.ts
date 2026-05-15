@@ -21,6 +21,8 @@ import webhookRoutes from './routes/webhooks';
 import aiRoutes from './routes/ai';
 import evidenceRoutes from './routes/evidence';
 import reputationRoutes from './routes/reputation';
+import creditRoutes from './routes/credit';
+import adminRoutes from './routes/admin';
 // import applicationsRoutes from './routes/applications';
 
 const app: Express = express();
@@ -43,8 +45,11 @@ app.use(
 // Request logging
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }));
+// Body parsing — capture raw body for webhook signature verification
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Rate limiting
@@ -60,7 +65,7 @@ app.use('/api/', limiter);
 /**
  * Health Check Endpoint
  */
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -82,6 +87,8 @@ app.use('/api/contracts', contractRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/evidence', evidenceRoutes);
 app.use('/api/reputation', reputationRoutes);
+app.use('/api/credit', creditRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/webhooks', webhookRoutes);
 // app.use('/api/applications', applicationsRoutes);
 
@@ -98,18 +105,18 @@ app.use((req: Request, res: Response) => {
 /**
  * Global Error Handler
  */
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   logger.error('Unhandled error:', err);
 
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       status: 'error',
       message: err.message,
       isOperational: err.isOperational,
     });
+    return;
   }
 
-  // Unexpected error
   res.status(500).json({
     status: 'error',
     message: 'Internal server error',

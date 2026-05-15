@@ -78,7 +78,7 @@ export class PaymentService {
     // Simulate successful payment
     const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    payment.status = 'completed';
+    payment.status = 'completed' as any;
     payment.transactionId = transactionId;
     await payment.save();
   }

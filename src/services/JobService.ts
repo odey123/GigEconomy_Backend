@@ -149,7 +149,7 @@ export class JobService {
       throw new ValidationError('Only job creator can close this job');
     }
 
-    job.status = status;
+    job.status = status as any;
     await job.save();
 
     return this.formatJobResponse(job);

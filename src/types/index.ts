@@ -138,6 +138,8 @@ export interface IPayment {
   status: PaymentStatus;
   paymentMethod?: string;
   stripePaymentId?: string;
+  squadPaymentId?: string;
+  squadReference?: string;
   transactionId?: string;
   description?: string;
   createdAt?: Date;

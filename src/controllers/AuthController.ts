@@ -118,7 +118,7 @@ export class AuthController {
    * Logout user (client-side, mainly for cleanup)
    * POST /api/auth/logout
    */
-  public logout = async (res: Response, next: NextFunction): Promise<void> => {
+  public logout = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.status(200).json({
         status: 'success',

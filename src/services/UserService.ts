@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { User, type IUserDocument } from '../models';
 import config from '../config/config';
-import { ValidationError, ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import { ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
 import type { CreateUserDTO, LoginDTO, UpdateUserDTO, UserResponseDTO } from '../utils/dtos';
 
 export class UserService {
@@ -151,7 +151,7 @@ export class UserService {
    * Generate JWT token
    */
   public generateToken(userId: string, expiresIn: string): string {
-    return jwt.sign({ userId }, config.jwtSecret, { expiresIn });
+    return jwt.sign({ userId }, config.jwtSecret, { expiresIn: expiresIn as any });
   }
 
   /**

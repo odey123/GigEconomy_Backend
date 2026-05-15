@@ -349,7 +349,7 @@ Provide a JSON response with:
       };
     } catch (error) {
       logger.error('Error in detectAnomaly:', error);
-      throw new AppError('Failed to detect anomalies', 500);
+      throw new AppError(500, 'Failed to detect anomalies');
     }
   }
 }

@@ -16,7 +16,7 @@ export { EvidenceService, default as evidenceService } from './EvidenceService';
 export { ReputationService, default as reputationService } from './ReputationService';
 
 // Export types
-export type { CreateUserDTO, LoginDTO, UpdateUserDTO, UserResponseDTO } from './UserService';
+export type { CreateUserDTO, LoginDTO, UpdateUserDTO, UserResponseDTO } from '../utils/dtos';
 export type { CreateJobDTO, JobResponseDTO } from './JobService';
 export type { CreateBookingDTO, BookingResponseDTO } from './BookingService';
 export type { CreateReviewDTO, ReviewResponseDTO } from './ReviewService';

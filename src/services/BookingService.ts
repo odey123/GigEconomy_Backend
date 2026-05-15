@@ -1,5 +1,6 @@
-import { Booking, Job, User, type IBookingDocument } from '../models';
+import { Booking, Job, type IBookingDocument } from '../models';
 import { NotFoundError, ValidationError } from '../utils/errors';
+import { BookingStatus, JobStatus } from '../types';
 
 export interface CreateBookingDTO {
   jobId: string;
@@ -33,7 +34,7 @@ export class BookingService {
       throw new NotFoundError('Job');
     }
 
-    if (job.status !== 'open') {
+    if (job.status !== JobStatus.OPEN) {
       throw new ValidationError('Job is no longer available');
     }
 
@@ -41,7 +42,7 @@ export class BookingService {
     const existingBooking = await Booking.findOne({
       jobId: data.jobId,
       workerId,
-      status: { $in: ['pending', 'accepted'] },
+      status: { $in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] },
     });
 
     if (existingBooking) {
@@ -84,12 +85,12 @@ export class BookingService {
       throw new ValidationError('Only client can accept bookings for their job');
     }
 
-    if (booking.status !== 'pending') {
+    if (booking.status !== BookingStatus.PENDING) {
       throw new ValidationError(`Cannot accept a ${booking.status} booking`);
     }
 
     // Update booking
-    booking.status = 'accepted';
+    booking.status = BookingStatus.ACCEPTED;
     booking.acceptedBudget = acceptedBudget || booking.proposedBudget;
     booking.startDate = new Date();
     await booking.save();
@@ -97,15 +98,15 @@ export class BookingService {
     // Update job status and assign worker
     const job = await Job.findById(booking.jobId);
     if (job) {
-      job.status = 'in_progress';
+      job.status = JobStatus.IN_PROGRESS;
       job.acceptedWorkerId = booking.workerId;
       await job.save();
     }
 
     // Cancel other pending bookings for this job
     await Booking.updateMany(
-      { jobId: booking.jobId, _id: { $ne: bookingId }, status: 'pending' },
-      { status: 'cancelled' }
+      { jobId: booking.jobId, _id: { $ne: bookingId }, status: BookingStatus.PENDING },
+      { status: BookingStatus.CANCELLED }
     );
 
     return this.formatBookingResponse(booking);
@@ -125,18 +126,18 @@ export class BookingService {
       throw new ValidationError('Unauthorized to complete this booking');
     }
 
-    if (booking.status !== 'accepted' && booking.status !== 'in_progress') {
+    if (booking.status !== BookingStatus.ACCEPTED && booking.status !== BookingStatus.IN_PROGRESS) {
       throw new ValidationError(`Cannot complete a ${booking.status} booking`);
     }
 
-    booking.status = 'completed';
+    booking.status = BookingStatus.COMPLETED;
     booking.completionDate = new Date();
     await booking.save();
 
     // Update job status
     const job = await Job.findById(booking.jobId);
     if (job) {
-      job.status = 'completed';
+      job.status = JobStatus.COMPLETED;
       await job.save();
     }
 
@@ -156,18 +157,19 @@ export class BookingService {
       throw new ValidationError('Unauthorized to cancel this booking');
     }
 
-    if (!['pending', 'accepted'].includes(booking.status)) {
+    if (![BookingStatus.PENDING, BookingStatus.ACCEPTED].includes(booking.status)) {
       throw new ValidationError(`Cannot cancel a ${booking.status} booking`);
     }
 
-    booking.status = 'cancelled';
+    const wasAccepted = booking.status === BookingStatus.ACCEPTED;
+    booking.status = BookingStatus.CANCELLED;
     await booking.save();
 
-    // If job was in progress, reset it to open
-    if (booking.status === 'accepted') {
+    // If job was accepted, reset it to open
+    if (wasAccepted) {
       const job = await Job.findById(booking.jobId);
       if (job) {
-        job.status = 'open';
+        job.status = JobStatus.OPEN;
         job.acceptedWorkerId = undefined;
         await job.save();
       }
