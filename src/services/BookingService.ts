@@ -1,6 +1,8 @@
-import { Booking, Job, type IBookingDocument } from '../models';
+import { Booking, Job, Contract, type IBookingDocument } from '../models';
+import { ContractStatus } from '../models/Contract';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { BookingStatus, JobStatus } from '../types';
+import logger from '../utils/logger';
 
 export interface CreateBookingDTO {
   jobId: string;
@@ -108,6 +110,26 @@ export class BookingService {
       { jobId: booking.jobId, _id: { $ne: bookingId }, status: BookingStatus.PENDING },
       { status: BookingStatus.CANCELLED }
     );
+
+    // Auto-create contract when booking is accepted
+    if (job) {
+      try {
+        const existingContract = await Contract.findOne({ gigId: booking.jobId, helperId: booking.workerId });
+        if (!existingContract) {
+          await Contract.create({
+            gigId: booking.jobId,
+            ownerId: booking.clientId,
+            helperId: booking.workerId,
+            workType: job.workType || 'task',
+            status: ContractStatus.ACTIVE,
+            totalAmount: booking.acceptedBudget || booking.proposedBudget,
+          });
+          logger.info('Contract auto-created from booking acceptance', { bookingId, jobId: booking.jobId });
+        }
+      } catch (err) {
+        logger.error('Failed to auto-create contract:', err);
+      }
+    }
 
     return this.formatBookingResponse(booking);
   }
