@@ -2,6 +2,9 @@ import axios, { AxiosInstance } from 'axios';
 import config from '../config/config';
 import logger from '../utils/logger';
 
+// Merchant ID prefix required by Squad for transfer references
+const MERCHANT_ID = 'SBQMKZ5ZV3';
+
 interface CreateVirtualAccountPayload {
   customerId: string;
   bvn: string;
@@ -67,7 +70,6 @@ class SquadService {
       timeout: 30000,
     });
 
-    // Add request/response interceptors for logging
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -82,20 +84,25 @@ class SquadService {
   }
 
   /**
+   * Build a transfer reference prefixed with merchant ID as required by Squad
+   */
+  private buildTransferRef(ref: string): string {
+    return `${MERCHANT_ID}_${ref}`;
+  }
+
+  /**
    * Create a virtual account with BVN verification
-   * Ref: Squad API - Virtual Account Endpoint
+   * POST /virtual-account
    */
   async createVirtualAccount(payload: CreateVirtualAccountPayload): Promise<any> {
     try {
-      const response = await this.client.post<
-        SquadResponse<{
-          id: string;
-          account_number: string;
-          account_name: string;
-          bank_code: string;
-          bank_name: string;
-        }>
-      >('/virtual-account', {
+      const response = await this.client.post<SquadResponse<{
+        id: string;
+        account_number: string;
+        account_name: string;
+        bank_code: string;
+        bank_name: string;
+      }>>('/virtual-account', {
         customer_identifier: payload.customerId,
         first_name: payload.firstName,
         last_name: payload.lastName,
@@ -123,30 +130,27 @@ class SquadService {
   }
 
   /**
-   * Initiate a bank transfer from virtual account
-   * Ref: Squad API - Transfer Endpoint
+   * Initiate a bank transfer (withdrawal/payout)
+   * POST /payout/transfer
    */
   async transfer(payload: TransferPayload): Promise<any> {
     try {
-      const response = await this.client.post<
-        SquadResponse<{
-          transaction_id: string;
-          status: string;
-          message: string;
-        }>
-      >('/transfer', {
-        amount: payload.amount * 100, // Convert to kobo (smallest unit)
+      const reference = this.buildTransferRef(payload.reference);
+
+      const response = await this.client.post<SquadResponse<{
+        transaction_reference: string;
+        status: string;
+      }>>('/payout/transfer', {
+        amount: payload.amount * 100, // kobo
         account_number: payload.accountNumber,
         bank_code: payload.bankCode,
         narration: payload.narration,
-        reference: payload.reference,
+        transaction_reference: reference,
+        currency_id: 'NGN',
       });
 
       if (response.data.status) {
-        logger.info('Transfer initiated successfully', {
-          transactionId: response.data.data.transaction_id,
-          reference: payload.reference,
-        });
+        logger.info('Transfer initiated successfully', { reference });
       }
 
       return response.data;
@@ -157,11 +161,12 @@ class SquadService {
   }
 
   /**
-   * Get virtual account details
+   * Get virtual account details by account number
+   * GET /virtual-account/customer/:accountNumber
    */
   async getVirtualAccountDetails(accountNumber: string): Promise<any> {
     try {
-      const response = await this.client.get(`/virtual-account/${accountNumber}`);
+      const response = await this.client.get(`/virtual-account/customer/${accountNumber}`);
       return response.data;
     } catch (error: any) {
       logger.error('Failed to fetch virtual account details:', error.message);
@@ -170,15 +175,14 @@ class SquadService {
   }
 
   /**
-   * Verify account details before transfer
+   * Verify/lookup a bank account before transfer
+   * POST /payout/account/lookup
    */
   async verifyAccount(accountNumber: string, bankCode: string): Promise<any> {
     try {
-      const response = await this.client.get('/account/resolve', {
-        params: {
-          account_number: accountNumber,
-          bank_code: bankCode,
-        },
+      const response = await this.client.post('/payout/account/lookup', {
+        account_number: accountNumber,
+        bank_code: bankCode,
       });
 
       if (response.data.status) {
@@ -193,11 +197,12 @@ class SquadService {
   }
 
   /**
-   * Get transaction status
+   * Verify payment transaction status
+   * GET /transaction/verify/:transaction_ref
    */
-  async getTransactionStatus(transactionId: string): Promise<any> {
+  async getTransactionStatus(transactionRef: string): Promise<any> {
     try {
-      const response = await this.client.get(`/transfer/${transactionId}`);
+      const response = await this.client.get(`/transaction/verify/${transactionRef}`);
       return response.data;
     } catch (error: any) {
       logger.error('Failed to fetch transaction status:', error.message);
@@ -206,8 +211,25 @@ class SquadService {
   }
 
   /**
-   * Create a payment link for a customer to pay
-   * Uses Squad POST /transaction/initiate
+   * Requery payout/transfer status
+   * POST /payout/requery
+   */
+  async requeryTransfer(transactionReference: string): Promise<any> {
+    try {
+      const response = await this.client.post('/payout/requery', {
+        transaction_reference: transactionReference,
+      });
+      return response.data;
+    } catch (error: any) {
+      logger.error('Failed to requery transfer:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a payment checkout link for a customer
+   * POST /transaction/initiate
+   * Returns checkout_url (not auth_url)
    */
   async createPaymentLink(payload: CreatePaymentLinkPayload): Promise<SquadResponse<{
     authorization_url: string;
@@ -220,7 +242,7 @@ class SquadService {
       }
 
       const response = await this.client.post('/transaction/initiate', {
-        amount: payload.amount * 100, // convert to kobo
+        amount: payload.amount * 100, // kobo
         email: customerEmail,
         currency: 'NGN',
         initiate_type: 'inline',
@@ -228,14 +250,13 @@ class SquadService {
         metadata: payload.metadata,
       });
 
-      // Normalise Squad's response shape to our internal interface
-      // Squad returns: { status: 200, success: true, data: { auth_url, transaction_ref } }
+      // Squad returns: { status: 200, success: true, data: { checkout_url, transaction_ref } }
       const squadData = response.data;
       return {
         status: squadData.success === true,
         message: squadData.message || 'Payment link created',
         data: {
-          authorization_url: squadData.data?.auth_url,
+          authorization_url: squadData.data?.checkout_url ?? squadData.data?.auth_url,
           reference: squadData.data?.transaction_ref ?? payload.reference,
         },
       };
@@ -246,11 +267,7 @@ class SquadService {
   }
 
   /**
-   * Configure auto-split for a payment reference.
-   * Squad handles actual fund splitting via webhook events; this records the
-   * intended split so the webhook handler has the config it needs.
-   * The webhook handler (handleChargeSuccess) already applies the split stored
-   * on the contract, so no additional Squad API call is required here.
+   * Auto-split is handled via webhook; just log the config here
    */
   async setupAutoSplit(reference: string, splits: AutoSplitEntry[]): Promise<void> {
     logger.info('Auto-split configured', {
@@ -260,27 +277,20 @@ class SquadService {
   }
 
   /**
-   * Generate a QR code URL for a payment link.
-   * Returns a URL that renders as a QR image — can be used directly in <img src>.
+   * QR code URL for a payment link
    */
   generateQRCode(url: string): string {
     return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
   }
 
   /**
-   * Create an escrow hold for a task contract.
-   * Squad has no native escrow API; the hold is tracked at the wallet balance level.
-   * Returns a local reference that ContractService stores against the contract.
+   * Platform-managed escrow (Squad has no native escrow)
    */
-  async createEscrow(payload: CreateEscrowPayload): Promise<SquadResponse<{
-    reference: string;
-  }>> {
+  async createEscrow(payload: CreateEscrowPayload): Promise<SquadResponse<{ reference: string }>> {
     logger.info('Escrow created (platform-managed)', {
       reference: payload.reference,
       amount: payload.amount,
-      customerId: payload.customerId,
     });
-
     return {
       status: true,
       message: 'Escrow created successfully',
@@ -289,8 +299,8 @@ class SquadService {
   }
 
   /**
-   * Release escrow to helper by initiating a transfer via Squad
-   * Uses POST /transfer
+   * Release escrow by paying helper via Squad payout
+   * POST /payout/transfer
    */
   async releaseEscrow(
     escrowReference: string,
@@ -299,33 +309,30 @@ class SquadService {
     amount: number
   ): Promise<SquadResponse<{ reference: string; transaction_id: string }>> {
     try {
-      const releaseReference = `REL_${escrowReference}_${Date.now()}`;
+      const releaseRef = this.buildTransferRef(`REL_${escrowReference}_${Date.now()}`);
 
       const response = await this.client.post<SquadResponse<{
-        transaction_id: string;
+        transaction_reference: string;
         status: string;
-      }>>('/transfer', {
-        amount: amount * 100, // convert to kobo
+      }>>('/payout/transfer', {
+        amount: amount * 100, // kobo
         account_number: accountNumber,
         bank_code: bankCode,
         narration: `Escrow release: ${escrowReference}`,
-        reference: releaseReference,
+        transaction_reference: releaseRef,
+        currency_id: 'NGN',
       });
 
       if (response.data.status) {
-        logger.info('Escrow released via transfer', {
-          escrowReference,
-          releaseReference,
-          amount,
-        });
+        logger.info('Escrow released via payout transfer', { escrowReference, releaseRef, amount });
       }
 
       return {
         status: response.data.status,
         message: response.data.message,
         data: {
-          reference: releaseReference,
-          transaction_id: response.data.data.transaction_id,
+          reference: releaseRef,
+          transaction_id: response.data.data?.transaction_reference || releaseRef,
         },
       };
     } catch (error: any) {
