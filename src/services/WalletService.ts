@@ -63,15 +63,26 @@ export class WalletService {
         throw new ValidationError(`Failed to create Squad virtual account: ${squadResponse.message}`);
       }
 
-      // Create wallet record
+      // Create wallet record — handle all possible Squad response field names
+      const d = squadResponse.data || {};
+      logger.info('Squad virtual account raw response:', JSON.stringify(d));
       const fullName = `${data.firstName} ${data.lastName}`.trim();
+      const accountNumber = d.virtual_account_number || d.account_number || d.accountNumber || '';
+      const accountName = d.account_name || d.accountName || d.customer_name || fullName;
+      const bankCode = d.bank_code || d.bankCode || '000';
+      const bankName = d.bank_name || d.bankName || 'Squad MFB';
+
+      if (!accountNumber) {
+        throw new ValidationError(`Squad returned no account number. Response: ${JSON.stringify(d)}`);
+      }
+
       const wallet = await Wallet.create({
         userId,
-        squadVirtualAccountId: squadResponse.data?.id || userId,
-        accountNumber: squadResponse.data?.account_number || '',
-        accountName: squadResponse.data?.account_name || fullName,
-        bankCode: squadResponse.data?.bank_code || '',
-        bankName: squadResponse.data?.bank_name || 'Squad MFB',
+        squadVirtualAccountId: d.id || d.virtual_account_number || d.customer_identifier || userId,
+        accountNumber,
+        accountName,
+        bankCode,
+        bankName,
         balance: 0,
         verified: true,
         bvn: data.bvn,
