@@ -111,7 +111,7 @@ export const walletValidationSchemas = {
     dateOfBirth: Joi.string().required(), // mm/dd/yyyy
     gender: Joi.string().valid('1', '2').required(), // '1' = Male, '2' = Female
     address: Joi.string().required().min(5),
-    beneficiaryAccount: Joi.string().length(10).optional(),
+    beneficiaryAccount: Joi.string().length(10).optional().allow(''),
   }),
 
   withdraw: Joi.object({
