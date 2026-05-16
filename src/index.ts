@@ -120,7 +120,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({
     status: 'error',
     message: 'Internal server error',
-    ...(config.nodeEnv === 'development' && { error: err.message }),
+    error: err.message,
+    stack: err.stack?.split('\n')[0],
   });
 });
 
