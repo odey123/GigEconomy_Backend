@@ -87,7 +87,10 @@ export class WalletService {
       return this.formatWalletResponse(wallet);
     } catch (error: any) {
       logger.error('Failed to create wallet', error);
-      throw error;
+      if (error instanceof ConflictError || error instanceof NotFoundError || error instanceof ValidationError) {
+        throw error;
+      }
+      throw new ValidationError(error.message || 'Failed to create wallet');
     }
   }
 
