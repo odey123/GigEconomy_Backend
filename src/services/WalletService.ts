@@ -50,7 +50,7 @@ export class WalletService {
         bvn: data.bvn,
         firstName: data.firstName,
         lastName: data.lastName,
-        middleName: data.middleName || '',
+        middleName: data.middleName || undefined,
         email: user.email,
         mobileNum: user.phone,
         dateOfBirth: data.dateOfBirth, // already in mm/dd/yyyy from controller

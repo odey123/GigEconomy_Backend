@@ -106,7 +106,7 @@ class SquadService {
         customer_identifier: payload.customerId,
         first_name: payload.firstName,
         last_name: payload.lastName,
-        middle_name: payload.middleName || '',
+        ...(payload.middleName && { middle_name: payload.middleName }),
         mobile_num: payload.mobileNum,
         dob: payload.dateOfBirth,
         email: payload.email,
