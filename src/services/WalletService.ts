@@ -5,8 +5,13 @@ import logger from '../utils/logger';
 
 export interface CreateWalletDTO {
   bvn: string;
-  fullName: string;
-  dateOfBirth: string; // YYYY-MM-DD
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  dateOfBirth: string; // mm/dd/yyyy as required by Squad
+  gender: string;      // '1' = Male, '2' = Female
+  address: string;
+  beneficiaryAccount?: string;
 }
 
 export interface WalletResponseDTO {
@@ -41,30 +46,36 @@ export class WalletService {
 
       // Call Squad to create virtual account
       const squadResponse = await SquadService.createVirtualAccount({
+        customerId: userId,
         bvn: data.bvn,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        middleName: data.middleName || '',
         email: user.email,
-        phone: user.phone,
-        dateOfBirth: data.dateOfBirth,
+        mobileNum: user.phone,
+        dateOfBirth: data.dateOfBirth, // already in mm/dd/yyyy from controller
+        gender: data.gender,
+        address: data.address,
+        beneficiaryAccount: data.beneficiaryAccount,
       });
 
       if (!squadResponse.status) {
-        throw new ValidationError('Failed to create Squad virtual account');
+        throw new ValidationError(`Failed to create Squad virtual account: ${squadResponse.message}`);
       }
 
       // Create wallet record
+      const fullName = `${data.firstName} ${data.lastName}`.trim();
       const wallet = await Wallet.create({
         userId,
-        squadVirtualAccountId: squadResponse.data.id,
-        accountNumber: squadResponse.data.account_number,
-        accountName: squadResponse.data.account_name,
-        bankCode: squadResponse.data.bank_code,
-        bankName: squadResponse.data.bank_name,
+        squadVirtualAccountId: squadResponse.data?.id || userId,
+        accountNumber: squadResponse.data?.account_number || '',
+        accountName: squadResponse.data?.account_name || fullName,
+        bankCode: squadResponse.data?.bank_code || '',
+        bankName: squadResponse.data?.bank_name || 'Squad MFB',
         balance: 0,
         verified: true,
         bvn: data.bvn,
-        fullName: data.fullName,
+        fullName,
         dateOfBirth: new Date(data.dateOfBirth),
       });
 

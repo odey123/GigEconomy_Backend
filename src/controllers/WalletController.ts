@@ -23,8 +23,13 @@ export class WalletController {
 
       const wallet = await WalletService.createWallet(userId, {
         bvn: value.bvn,
-        fullName: value.fullName,
+        firstName: value.firstName,
+        lastName: value.lastName,
+        middleName: value.middleName,
         dateOfBirth: value.dateOfBirth,
+        gender: value.gender,
+        address: value.address,
+        beneficiaryAccount: value.beneficiaryAccount,
       });
 
       res.status(201).json({

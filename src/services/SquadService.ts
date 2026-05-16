@@ -3,12 +3,17 @@ import config from '../config/config';
 import logger from '../utils/logger';
 
 interface CreateVirtualAccountPayload {
+  customerId: string;
   bvn: string;
   firstName: string;
   lastName: string;
+  middleName?: string;
   email: string;
-  phone: string;
-  dateOfBirth: string;
+  mobileNum: string;
+  dateOfBirth: string; // mm/dd/yyyy
+  gender: string;      // '1' = Male, '2' = Female
+  address: string;
+  beneficiaryAccount?: string;
 }
 
 interface TransferPayload {
@@ -91,12 +96,17 @@ class SquadService {
           bank_name: string;
         }>
       >('/virtual-account', {
-        bvn: payload.bvn,
+        customer_identifier: payload.customerId,
         first_name: payload.firstName,
         last_name: payload.lastName,
-        email: payload.email,
-        phone_number: payload.phone,
+        middle_name: payload.middleName || '',
+        mobile_num: payload.mobileNum,
         dob: payload.dateOfBirth,
+        email: payload.email,
+        bvn: payload.bvn,
+        gender: payload.gender,
+        address: payload.address,
+        ...(payload.beneficiaryAccount && { beneficiary_account: payload.beneficiaryAccount }),
       });
 
       if (response.data.status) {
